@@ -77,6 +77,8 @@ const {
   deleteChatRoom,
 } = require("../controllers/Chat");
 
+const { addClass } = require("../controllers/Class");
+
 //vocab
 router.get("/VocabLessons", getVocabLesson);
 router.get("/VocabinLesson/:TopicId", getVocabinLesson);
@@ -144,4 +146,7 @@ router.get("/ChatRoom/:id", getChatRoom);
 router.get("/ChatRoom/getUserChatRoom/:userId", getUserChatRooms);
 router.put("/ChatRoom/update/:id", updateTest);
 router.delete("/ChatRoom/delete/:id", deleteTest);
+//class
+router.post("/Class/add", addClass);
+
 module.exports = router;
