@@ -7,6 +7,8 @@ const {
   getDocs,
   getDoc,
   arrayUnion,
+  query,
+  where,
 } = require("firebase/firestore");
 const { firebase } = require("../config");
 const firestore = getFirestore(firebase);
@@ -37,6 +39,19 @@ const addClass = async (req, res) => {
   }
 };
 
+const getUserName = async (userId) => {
+  try {
+    const myCollection = collection(firestore, "Users");
+    const docRef1 = doc(myCollection, userId);
+    const documentSnapshot = await getDoc(docRef1);
+
+    if (documentSnapshot.exists()) {
+      return { success: true, userName: documentSnapshot.data().name };
+    }
+  } catch (error) {
+    console.error("Error get user document: ", error);
+  }
+};
 const getAllClasses = async (req, res) => {
   const myCollection = collection(firestore, "Class");
   try {
@@ -67,18 +82,39 @@ const getAllClasses = async (req, res) => {
     return [];
   }
 };
-const getUserName = async (userId) => {
-  try {
-    const myCollection = collection(firestore, "Users");
-    const docRef1 = doc(myCollection, userId);
-    const documentSnapshot = await getDoc(docRef1);
 
-    if (documentSnapshot.exists()) {
-      return { success: true, userName: documentSnapshot.data().name };
-    }
+const getClassesByUserTeacher = async (req, res) => {
+  const myCollection = collection(firestore, "Class");
+  try {
+    console.log(req.params.userId);
+    const q = query(myCollection, where("userId", "==", req.params.userId));
+    const querySnapshot = await getDocs(q);
+
+    const list = await Promise.all(
+      querySnapshot.docs.map(async (doc) => {
+        let userName;
+
+        if (doc.data().userId) {
+          userName = await getUserName(doc.data().userId)
+            .then((res) => {
+              return res.userName;
+            })
+            .catch((error) => console.log("error:" + error));
+        }
+
+        const data = { ...doc.data(), userName: userName };
+        return { ...data };
+      })
+    );
+    res.json({ success: true, classes: list });
   } catch (error) {
-    console.error("Error get user document: ", error);
+    res.json({
+      success: false,
+      message: "something went wrong when get data from Class",
+    });
+    console.log(error);
+    return [];
   }
 };
 
-module.exports = { addClass, getAllClasses };
+module.exports = { addClass, getAllClasses, getClassesByUserTeacher };

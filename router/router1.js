@@ -77,7 +77,11 @@ const {
   deleteChatRoom,
 } = require("../controllers/Chat");
 
-const { addClass, getAllClasses } = require("../controllers/Class");
+const {
+  addClass,
+  getAllClasses,
+  getClassesByUserTeacher,
+} = require("../controllers/Class");
 
 //vocab
 router.get("/VocabLessons", getVocabLesson);
@@ -149,5 +153,6 @@ router.delete("/ChatRoom/delete/:id", deleteTest);
 //class
 router.post("/Class/add", addClass);
 router.get("/Classes", getAllClasses);
+router.get("/Classes/:userId", getClassesByUserTeacher);
 
 module.exports = router;
