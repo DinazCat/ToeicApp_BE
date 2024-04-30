@@ -7,6 +7,8 @@ const {
   doc,
   setDoc,
   getDoc,
+  query,
+  where,
 } = require("firebase/firestore");
 const { firebase, admin } = require("../config");
 const firestore = getFirestore(firebase);
@@ -170,6 +172,25 @@ const getAllUsers = async (req, res) => {
     return [];
   }
 };
+const getAllTeachers = async (req, res) => {
+  const myCollection = collection(firestore, "Users");
+  try {
+    const q = query(myCollection, where("type", "==", "Teacher"));
+    const querySnapshot = await getDocs(q);
+    const list = querySnapshot.docs.map((doc) => {
+      const data = doc.data();
+      return { ...data };
+    });
+    res.json({ success: true, teachers: list });
+  } catch (error) {
+    res.json({
+      success: false,
+      message: "something went wrong when get data from Users",
+    });
+    console.log(error);
+    return [];
+  }
+};
 module.exports = {
   sendNotification,
   setUserInfo,
@@ -179,4 +200,5 @@ module.exports = {
   createNotiBody,
   uploadImage,
   updateUserPrivate,
+  getAllTeachers,
 };

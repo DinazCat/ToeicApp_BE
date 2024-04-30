@@ -86,7 +86,6 @@ const getAllClasses = async (req, res) => {
 const getClassesByUserTeacher = async (req, res) => {
   const myCollection = collection(firestore, "Class");
   try {
-    console.log(req.params.userId);
     const q = query(myCollection, where("userId", "==", req.params.userId));
     const querySnapshot = await getDocs(q);
 
@@ -117,4 +116,76 @@ const getClassesByUserTeacher = async (req, res) => {
   }
 };
 
-module.exports = { addClass, getAllClasses, getClassesByUserTeacher };
+const getClassById = async (classId) => {
+  try {
+    const myCollection = collection(firestore, "Class");
+    const docRef1 = doc(myCollection, classId);
+    const documentSnapshot = await getDoc(docRef1);
+
+    if (documentSnapshot.exists()) {
+      return { success: true, class: documentSnapshot.data() };
+    }
+  } catch (error) {
+    console.error("Error get user document: ", error);
+  }
+};
+const getClassesByUser = async (req, res) => {
+  const myCollection = collection(firestore, "Users");
+
+  try {
+    const docRef1 = doc(myCollection, req.params.userId);
+    const documentSnapshot = await getDoc(docRef1);
+
+    if (documentSnapshot.exists()) {
+      if (documentSnapshot.data().Classes) {
+        const list = await Promise.all(
+          documentSnapshot.data().Classes.map(async (id) => {
+            const data = await getClassById(id)
+              .then((res) => {
+                return res.class;
+              })
+              .catch((error) => console.log("error:" + error));
+
+            return { ...data, userName: documentSnapshot.data().name };
+          })
+        );
+        res.json({ success: true, classes: list });
+      } else {
+        res.status(404).send({ success: false, message: "User not found" });
+      }
+    }
+  } catch (error) {
+    res.json({
+      success: false,
+      message: "something went wrong when get data from Class",
+    });
+    console.log(error);
+    return [];
+  }
+};
+
+const registerCourse = async (req, res) => {
+  const classCollection = collection(firestore, "Class");
+  const userCollection = collection(firestore, "Users");
+
+  try {
+    const data = req.body;
+    console.log(data);
+    const docRef1 = doc(userCollection, data.user.id);
+    await updateDoc(docRef1, { Classes: arrayUnion(data.classId) });
+    const docRef2 = doc(classCollection, data.classId);
+    await updateDoc(docRef2, { Participants: arrayUnion(data.user) });
+    console.log("Document successfully update!");
+    res.send({ message: "Register class successfully!" });
+  } catch (error) {
+    console.error("Error registerCourse: ", error);
+  }
+};
+
+module.exports = {
+  addClass,
+  getAllClasses,
+  getClassesByUserTeacher,
+  getClassesByUser,
+  registerCourse,
+};
