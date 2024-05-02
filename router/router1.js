@@ -20,6 +20,7 @@ const {
   getAllUsers,
   getUserData,
   updateUserPrivate,
+  getAllTeachers,
 } = require("../controllers/User");
 const {
   uploadAudio,
@@ -77,6 +78,14 @@ const {
   deleteChatRoom,
 } = require("../controllers/Chat");
 
+const {
+  addClass,
+  getAllClasses,
+  getClassesByUserTeacher,
+  getClassesByUser,
+  registerCourse,
+} = require("../controllers/Class");
+
 //vocab
 router.get("/VocabLessons", getVocabLesson);
 router.get("/VocabinLesson/:TopicId", getVocabinLesson);
@@ -90,6 +99,7 @@ router.put("/updateUser/:userId", updateUser);
 router.put("/updateUserPrivate/:userId", updateUserPrivate);
 router.get("/Users", getAllUsers);
 router.get("/UserData/:userId", getUserData);
+router.get("/Teachers", getAllTeachers);
 //question
 router.get("/Question/:Part/:userId/:number", getQuestion);
 router.post("/PracticeHistory/:userId/:sign", pushPracticeHistory);
@@ -144,4 +154,10 @@ router.get("/ChatRoom/:id", getChatRoom);
 router.get("/ChatRoom/getUserChatRoom/:userId", getUserChatRooms);
 router.put("/ChatRoom/update/:id", updateTest);
 router.delete("/ChatRoom/delete/:id", deleteTest);
+//class
+router.post("/Class/add", addClass);
+router.get("/Classes", getAllClasses);
+router.get("/Classes/:userId", getClassesByUser);
+router.post("/Class/register", registerCourse);
+
 module.exports = router;
