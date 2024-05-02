@@ -85,6 +85,8 @@ const {
   getClassesByUser,
   registerCourse,
 } = require("../controllers/Class");
+const {getRecordings, getRangeDate} = require('../controllers/Meeting')
+const {getAgendaOfUser} = require('../controllers/Agenda')
 
 //vocab
 router.get("/VocabLessons", getVocabLesson);
@@ -159,5 +161,10 @@ router.post("/Class/add", addClass);
 router.get("/Classes", getAllClasses);
 router.get("/Classes/:userId", getClassesByUser);
 router.post("/Class/register", registerCourse);
+//Meeting
+router.get('/Meeting/getRecordings/:classId',getRecordings)
+router.get('/Meeting/getRangeDate/:classId',getRangeDate)
+//Agenda
+router.get('/Agenda/getAgendaOfUser/:userId',getAgendaOfUser)
 
 module.exports = router;
