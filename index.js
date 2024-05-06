@@ -74,6 +74,20 @@ io.on("connection", (socket) => {
     userId = data;
     console.log(data);
   });
+  //receive and send meetingId
+  // socket.on("MeetingId", (data) => {
+  //   console.log(data)
+  //   socket.emit("getMeetingId", data);
+  // });
+  db.collection("Class")
+  .onSnapshot((querySnapshot) => {
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+        socket.emit("getMeetingId", {ClassId:data.classId,MeetingId:data.MeetingId});
+    });
+
+  })
+
   //realtime cho alarmVocab
   db.collection("Users")
     .doc(userId)
