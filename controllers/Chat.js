@@ -81,17 +81,15 @@ const updateCall = async (req, res) => {
 const addChatRoom = async (req, res) => {
   try {
     const myCollection = collection(firestore, "ChatRoom");
-    await addDoc(myCollection, req.body);
-    console.log("Document successfully add!");
-    res.send({ message: "ChatRoom added successfully" });
+    const docRef = await addDoc(myCollection, req.body);
+    console.log("Document successfully added with ID: ", docRef.id);
+    res.send({ message: "ChatRoom added successfully", id: docRef.id });
   } catch (error) {
     console.error("Error adding document: ", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "something went wrong when adding ChatRoom",
-      });
+    res.status(500).json({
+      success: false,
+      message: "something went wrong when adding ChatRoom",
+    });
   }
 };
 const getUserChatRooms = async (req, res) => {
@@ -151,14 +149,17 @@ const updateChatRoom = async (req, res) => {
     res.send({ message: "Document successfully updated!" });
   } catch (error) {
     console.error("Error updating ChatRoom document: ", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "something went wrong when update ChatRoom data",
-      });
+    res.status(500).json({
+      success: false,
+      message: "something went wrong when update ChatRoom data",
+    });
   }
 };
+
+const updateMessageInChat = async() =>{
+
+}
+
 const deleteChatRoom = async (req, res) => {
   try {
     const documentRef = db.collection("ChatRoom").doc(req.params.id);
@@ -166,12 +167,10 @@ const deleteChatRoom = async (req, res) => {
     console.log("Document deleted successfully.");
   } catch (error) {
     console.log("Error deleting document:", error);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "something went wrong when delete ChatRoom",
-      });
+    res.status(500).json({
+      success: false,
+      message: "something went wrong when delete ChatRoom",
+    });
   }
 };
 
