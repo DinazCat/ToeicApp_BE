@@ -39,14 +39,14 @@ const addClass = async (req, res) => {
   }
 };
 
-const getUserName = async (userId) => {
+const getUser = async (userId) => {
   try {
     const myCollection = collection(firestore, "Users");
     const docRef1 = doc(myCollection, userId);
     const documentSnapshot = await getDoc(docRef1);
 
     if (documentSnapshot.exists()) {
-      return { success: true, userName: documentSnapshot.data().name };
+      return documentSnapshot.data();
     }
   } catch (error) {
     console.error("Error get user document: ", error);
@@ -61,9 +61,9 @@ const getAllClasses = async (req, res) => {
         let userName;
 
         if (doc.data().userId) {
-          userName = await getUserName(doc.data().userId)
+          userName = await getUser(doc.data().userId)
             .then((res) => {
-              return res.userName;
+              return res.name;
             })
             .catch((error) => console.log("error:" + error));
         }
@@ -123,12 +123,13 @@ const getClassById = async (classId) => {
     const documentSnapshot = await getDoc(docRef1);
 
     if (documentSnapshot.exists()) {
-      return { success: true, class: documentSnapshot.data() };
+      return documentSnapshot.data();
     }
   } catch (error) {
     console.error("Error get user document: ", error);
   }
 };
+
 const getClassesByUser = async (req, res) => {
   const myCollection = collection(firestore, "Users");
 
@@ -142,7 +143,7 @@ const getClassesByUser = async (req, res) => {
           documentSnapshot.data().Classes.map(async (id) => {
             const data = await getClassById(id)
               .then((res) => {
-                return res.class;
+                return res;
               })
               .catch((error) => console.log("error:" + error));
 
@@ -164,17 +165,66 @@ const getClassesByUser = async (req, res) => {
   }
 };
 
+const getTeachersOfClasses = async (req, res) => {
+  const myCollection = collection(firestore, "Users");
+  try {
+    const docRef1 = doc(myCollection, req.params.userId);
+    const documentSnapshot = await getDoc(docRef1);
+
+    if (documentSnapshot.exists()) {
+      if (documentSnapshot.data().Classes) {
+        let list = await Promise.all(
+          documentSnapshot.data().Classes.map(async (id) => {
+            const data = await getClassById(id)
+              .then((res) => {
+                return getUser(res.userId);
+              })
+              .catch((error) => console.log("error:" + error));
+
+            return { ...data };
+          })
+        );
+
+        //Xử lý mảng trùng và tính toán rating
+        list = list.reduce((accumulator, item) => {
+          if (!accumulator.some((e) => e.id === item.id)) {
+            let rating = 0;
+            for (let i = 0; i < item?.reviews.length; i++)
+              rating += item?.reviews[i]?.rating;
+
+            if (rating > 0)
+              rating = (rating / item?.reviews?.length).toFixed(1);
+
+            const data = { ...item, rating: rating };
+            accumulator.push(data);
+          }
+          return accumulator;
+        }, []);
+        res.json({ success: true, teachers: list });
+      } else {
+        res.status(404).send({ success: false, message: "User not found" });
+      }
+    }
+  } catch (error) {
+    res.json({
+      success: false,
+      message: "something went wrong when get data from Class",
+    });
+    console.log(error);
+    return [];
+  }
+};
+
 const registerCourse = async (req, res) => {
   const classCollection = collection(firestore, "Class");
   const userCollection = collection(firestore, "Users");
 
   try {
     const data = req.body;
-    console.log(data);
     const docRef1 = doc(userCollection, data.user.id);
     await updateDoc(docRef1, { Classes: arrayUnion(data.classId) });
     const docRef2 = doc(classCollection, data.classId);
-    await updateDoc(docRef2, { Participants: arrayUnion(data.user) });
+    await updateDoc(docRef2, { Members: arrayUnion(data.user) });
     console.log("Document successfully update!");
     res.send({ message: "Register class successfully!" });
   } catch (error) {
@@ -188,4 +238,5 @@ module.exports = {
   getClassesByUserTeacher,
   getClassesByUser,
   registerCourse,
+  getTeachersOfClasses,
 };
