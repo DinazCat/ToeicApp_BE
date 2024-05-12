@@ -58,7 +58,7 @@ const getAgendaOfUser = async(req,res)=>{
   
   if (documentSnapshot.exists()) {
     const data_Classes = documentSnapshot.data().Classes;
-    for(let i = 0; i < data_Classes.length; i++){
+    for(let i = 0; i < data_Classes?.length; i++){
         const Collection_Class = collection(firestore, 'Class');
     const docRef1 = doc(Collection_Class, data_Classes[i]);
     const documentSnapshot1 = await getDoc(docRef1);
@@ -68,7 +68,7 @@ const getAgendaOfUser = async(req,res)=>{
     const data_DateStart = documentSnapshot1.data().Start_Date
     const data_DateFinish = documentSnapshot1.data().Finish_Date
     if(checkToAdd(data_DateStart,data_DateFinish)){
-    for(let j = 0; j < data_Agenda.length; j++){
+    for(let j = 0; j < data_Agenda?.length; j++){
         switch (data_Agenda[j].Date) {
             case 'Sunday':
               schedule_[6].push({

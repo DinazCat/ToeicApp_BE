@@ -21,7 +21,7 @@ const getRecordings = async (req,res)=>{
   if (documentSnapshot.exists()) {
     const data = documentSnapshot.data();
     let list = [];
-    for(let i = data.Recordings.length-1; i >= 0; i--){
+    for(let i = data?.Recordings?.length-1; i >= 0; i--){
         const url= `https://api.videosdk.live/v2/recordings?roomId=${data.Recordings[i].id}&&composerId=${data.Recordings[i].composerId}`;
         const response = await fetch(url, options);
         const records = await response.json();
@@ -54,7 +54,7 @@ const getRecordings = async (req,res)=>{
     // Mảng để lưu trữ các ngày chủ nhật trong khoảng thời gian
     let list = [];
     let list2 = []
-    for (let i = 0; i < classInfo.Schedule.length; i++){
+    for (let i = 0; i < classInfo?.Schedule?.length; i++){
       switch (classInfo.Schedule[i].Date) {
         case 'Sunday':
           list2.push(0)
@@ -88,7 +88,7 @@ const getRecordings = async (req,res)=>{
       for(let i = 0; i < list2.length; i++){
         if (startDate.day() === list2[i]) {
           let listContent = []
-          for(let j = 0; j < classInfo.Recordings.length; j++){
+          for(let j = 0; j < classInfo?.Recordings?.length; j++){
             if(moment(classInfo.Recordings[j].Date,"DD/MM/YYYY").isSame(startDate)){
               const url= `https://api.videosdk.live/v2/recordings?roomId=${classInfo.Recordings[j].id}&&composerId=${classInfo.Recordings[j].composerId}`;
               const response = await fetch(url, options);

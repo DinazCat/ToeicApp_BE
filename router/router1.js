@@ -21,6 +21,9 @@ const {
   getUserData,
   updateUserPrivate,
   getAllTeachers,
+  addReview,
+  updateReview,
+  setTeacherInfo
 } = require("../controllers/User");
 const {
   uploadAudio,
@@ -84,9 +87,10 @@ const {
   getClassesByUserTeacher,
   getClassesByUser,
   registerCourse,
+  getTeachersOfClasses,
 } = require("../controllers/Class");
-const {getRecordings, getRangeDate} = require('../controllers/Meeting')
-const {getAgendaOfUser} = require('../controllers/Agenda')
+const { getRecordings, getRangeDate } = require("../controllers/Meeting");
+const { getAgendaOfUser } = require("../controllers/Agenda");
 
 //vocab
 router.get("/VocabLessons", getVocabLesson);
@@ -97,11 +101,14 @@ router.post("/alarmVocab/:userId", setAlarmVocab);
 router.put("/updateAlarmVocab/:userId", updateAlarmVocab);
 //user
 router.put("/setUserInfo/:userId", setUserInfo);
+router.put("/setTeacherInfo/:userId", setTeacherInfo);
 router.put("/updateUser/:userId", updateUser);
 router.put("/updateUserPrivate/:userId", updateUserPrivate);
 router.get("/Users", getAllUsers);
 router.get("/UserData/:userId", getUserData);
 router.get("/Teachers", getAllTeachers);
+router.put("/addReview/:userId", addReview);
+router.put("/updateReview/:userId", updateReview);
 //question
 router.get("/Question/:Part/:userId/:number", getQuestion);
 router.post("/PracticeHistory/:userId/:sign", pushPracticeHistory);
@@ -161,10 +168,11 @@ router.post("/Class/add", addClass);
 router.get("/Classes", getAllClasses);
 router.get("/Classes/:userId", getClassesByUser);
 router.post("/Class/register", registerCourse);
+router.get("/Teachers/:userId", getTeachersOfClasses);
 //Meeting
-router.get('/Meeting/getRecordings/:classId',getRecordings)
-router.get('/Meeting/getRangeDate/:classId',getRangeDate)
+router.get("/Meeting/getRecordings/:classId", getRecordings);
+router.get("/Meeting/getRangeDate/:classId", getRangeDate);
 //Agenda
-router.get('/Agenda/getAgendaOfUser/:userId',getAgendaOfUser)
+router.get("/Agenda/getAgendaOfUser/:userId", getAgendaOfUser);
 
 module.exports = router;
