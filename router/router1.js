@@ -23,6 +23,7 @@ const {
   getAllTeachers,
   addReview,
   updateReview,
+  setTeacherInfo
 } = require("../controllers/User");
 const {
   uploadAudio,
@@ -100,6 +101,7 @@ router.post("/alarmVocab/:userId", setAlarmVocab);
 router.put("/updateAlarmVocab/:userId", updateAlarmVocab);
 //user
 router.put("/setUserInfo/:userId", setUserInfo);
+router.put("/setTeacherInfo/:userId", setTeacherInfo);
 router.put("/updateUser/:userId", updateUser);
 router.put("/updateUserPrivate/:userId", updateUserPrivate);
 router.get("/Users", getAllUsers);

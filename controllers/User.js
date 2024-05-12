@@ -109,6 +109,36 @@ const uploadImage = async (img) => {
     return null;
   }
 };
+const setTeacherInfo = async (req, res) => {
+  try {
+    const myCollection = collection(firestore, "Users");
+    const docRef1 = doc(myCollection, req.params.userId);
+    let data = req.body;
+    await uploadImage(req.body.backIDImage).then((x) => {
+      data.backIDImage = x;
+    });
+    await uploadImage(req.body.frontIDImage).then((x) => {
+      data.frontIDImage = x;
+    });
+    await uploadImage(req.body.toeicCertificateImage).then((x) => {
+      data.toeicCertificateImage = x;
+    });
+    for(let i = 0; i < req.body.otherCertificateImages.length; i++){
+      await uploadImage(req.body.otherCertificateImages[i]).then((x) => {
+        data.otherCertificateImages[i] = x;
+      });
+    }
+    await setDoc(docRef1, data);
+    console.log("Document successfully set!");
+    res.send({ message: "User data set successfully" });
+  } catch (error) {
+    console.error("Error setting teacher document: ", error);
+    res.status(500).json({
+      success: false,
+      message: "something went wrong when set teacher data",
+    });
+  }
+};
 const updateUserPrivate = async (req, res) => {
   try {
     const myCollection = collection(firestore, "Users");
@@ -267,4 +297,5 @@ module.exports = {
   getAllTeachers,
   addReview,
   updateReview,
+  setTeacherInfo
 };

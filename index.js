@@ -203,7 +203,22 @@ io.on("connection", (socket) => {
     });
 
   socket.on("chat message", ({ roomId, message }) => {
-    io.to(roomId).emit("chat message", { message });
+    db.collection("ChatRoom")
+      .doc(roomId)
+      .get()
+      .then((doc) => {
+        if (doc.exists) {
+          const room = doc.data();
+          room.users.forEach((user) => {
+            io.to(user.userId).emit("chat message", { message });
+          });
+        } else {
+          console.log("No such document!");
+        }
+      })
+      .catch((error) => {
+        console.log("Error getting document:", error);
+      });
   });
 
   // Xử lý khi client gửi yêu cầu

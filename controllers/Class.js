@@ -189,7 +189,9 @@ const getTeachersOfClasses = async (req, res) => {
         list = list.reduce((accumulator, item) => {
           if (!accumulator.some((e) => e.id === item.id)) {
             let rating = 0;
-            for (let i = 0; i < item?.reviews.length; i++)
+
+            for (let i = 0; i < item?.reviews?.length; i++)
+
               rating += item?.reviews[i]?.rating;
 
             if (rating > 0)
