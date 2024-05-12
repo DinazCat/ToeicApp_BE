@@ -9,9 +9,18 @@ const {
   getDoc,
   query,
   where,
+  arrayUnion,
+  runTransaction,
 } = require("firebase/firestore");
+const {
+  getStorage,
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+} = require("firebase/storage");
 const { firebase, admin } = require("../config");
 const firestore = getFirestore(firebase);
+const storage = getStorage();
 
 const createNotiBody = async (id) => {
   const myCollection = collection(firestore, "Vocabulary");
@@ -100,6 +109,36 @@ const uploadImage = async (img) => {
     return null;
   }
 };
+const setTeacherInfo = async (req, res) => {
+  try {
+    const myCollection = collection(firestore, "Users");
+    const docRef1 = doc(myCollection, req.params.userId);
+    let data = req.body;
+    await uploadImage(req.body.backIDImage).then((x) => {
+      data.backIDImage = x;
+    });
+    await uploadImage(req.body.frontIDImage).then((x) => {
+      data.frontIDImage = x;
+    });
+    await uploadImage(req.body.toeicCertificateImage).then((x) => {
+      data.toeicCertificateImage = x;
+    });
+    for(let i = 0; i < req.body.otherCertificateImages.length; i++){
+      await uploadImage(req.body.otherCertificateImages[i]).then((x) => {
+        data.otherCertificateImages[i] = x;
+      });
+    }
+    await setDoc(docRef1, data);
+    console.log("Document successfully set!");
+    res.send({ message: "User data set successfully" });
+  } catch (error) {
+    console.error("Error setting teacher document: ", error);
+    res.status(500).json({
+      success: false,
+      message: "something went wrong when set teacher data",
+    });
+  }
+};
 const updateUserPrivate = async (req, res) => {
   try {
     const myCollection = collection(firestore, "Users");
@@ -179,7 +218,16 @@ const getAllTeachers = async (req, res) => {
     const querySnapshot = await getDocs(q);
     const list = querySnapshot.docs.map((doc) => {
       const data = doc.data();
-      return { ...data };
+      let rating = 0;
+
+      for (let i = 0; i < data?.reviews?.length; i++)
+        rating += data?.reviews[i]?.rating;
+
+      if (rating > 0) rating = (rating / data?.reviews?.length).toFixed(1);
+
+      const result = { ...data, rating: rating };
+
+      return { ...result };
     });
     res.json({ success: true, teachers: list });
   } catch (error) {
@@ -189,6 +237,52 @@ const getAllTeachers = async (req, res) => {
     });
     console.log(error);
     return [];
+  }
+};
+const addReview = async (req, res) => {
+  const myColllection = collection(firestore, "Users");
+  const data = req.body;
+  const docRef1 = doc(myColllection, data.id);
+  try {
+    await updateDoc(docRef1, { reviews: arrayUnion(data.review) });
+    console.log("Document successfully set!");
+    res.send({ message: "Add review successfully" });
+  } catch (error) {
+    console.error("Error setting user document: ", error);
+    res.status(500).json({
+      success: false,
+      message: "something went wrong when add review",
+    });
+  }
+};
+const updateReview = async (req, res) => {
+  const myColllection = collection(firestore, "Users");
+  const data = req.body;
+  const docRef1 = doc(myColllection, data.id);
+
+  try {
+    await runTransaction(firestore, async (transaction) => {
+      const documentSnapshot = await transaction.get(docRef1);
+      if (!documentSnapshot.exists()) {
+        throw "Document does not exist!";
+      }
+
+      const reviews = documentSnapshot.data().reviews;
+
+      const result = reviews.map((item) =>
+        item.id === data.id ? item : data.review
+      );
+
+      transaction.update(docRef1, { reviews: result });
+    });
+    console.log("Document successfully updated!");
+    res.send({ message: "Document successfully updated!" });
+  } catch (error) {
+    console.error("Error get user document: ", error);
+    res.status(500).json({
+      success: false,
+      message: "something went wrong when update review",
+    });
   }
 };
 module.exports = {
@@ -201,4 +295,7 @@ module.exports = {
   uploadImage,
   updateUserPrivate,
   getAllTeachers,
+  addReview,
+  updateReview,
+  setTeacherInfo
 };
