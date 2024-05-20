@@ -1,8 +1,11 @@
 const express = require("express");
-const { firebase, db } = require("./config");
+const { firebase, db, admin } = require("./config");
 const cron = require("node-cron");
 const PORT = 3000;
 const multer = require("multer");
+const fs = require('fs');
+const mammoth = require('mammoth');
+const path = require('path');
 const upload = multer({ dest: "uploads/" });
 
 const {
@@ -84,9 +87,19 @@ io.on("connection", (socket) => {
     querySnapshot.forEach((doc) => {
       const data = doc.data();
         socket.emit("getMeetingId", {ClassId:data.classId,MeetingId:data.MeetingId});
+        socket.emit("getFiles",{ClassId:data.classId,Files:data.FileSource})
     });
 
   })
+    //realtime cho folder
+    db.collection("Folder")
+    .onSnapshot((querySnapshot) => {
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+          socket.emit("getFilesinFolder",{Id:data.idFolder,Files:data?.FileSource||[]})
+      });
+  
+    })
 
   //realtime cho alarmVocab
   db.collection("Users")
@@ -241,6 +254,64 @@ app.post("/upload", upload.single("image"), (req, res) => {
 
   res.json({ message: "Image uploaded successfully", photo: file.path });
 });
+// Route để truy cập file
+app.get('/getfilebase64/:filename', (req, res) => {
+  const filePath = path.join(__dirname, 'uploads', req.params.filename);
+  // console.log(filePath)
+  fs.readFile(filePath, (err, data) => {
+    if (err) {
+      res.status(500).send(err);
+    } else {
+      const base64Data = data.toString('base64');
+      res.json({ base64: base64Data });
+    }
+  });
+  // res.sendFile(filePath);
+});
+app.get('/getfilebinary/:filename', (req, res) => {
+  const filePath = path.join(__dirname, 'uploads', req.params.filename);
+  // console.log(filePath)
+
+  res.sendFile(filePath);
+});
+app.get('/getfilehtml/:filename', (req, res) => {
+  const filePath = path.join(__dirname, 'uploads', req.params.filename);
+  mammoth.convertToHtml({ path: filePath })
+  .then((result) => {
+      const html = result.value; // Nội dung HTML được tạo từ tệp Word
+      res.json({html:html})
+  })
+  .catch((err) => {
+      console.error('Error converting to HTML: ', err);
+  });
+});
+app.get('/getfileppthtml/:filename', (req, res) => {
+  // const filePath = path.join(__dirname, 'uploads', req.params.filename);
+ 
+  // const outputDir = path.join(__dirname, 'output');
+
+  // if (!fs.existsSync(outputDir)){
+  //     fs.mkdirSync(outputDir);
+  // }
+
+  // pptx2html(filePath, outputDir)
+  //     .then(() => {
+  //         console.log('Conversion successful!');
+  //         // Đọc và xử lý tệp HTML kết quả
+  //         const htmlFilePath = path.join(outputDir, 'index.html');
+  //         fs.readFile(htmlFilePath, 'utf8', (err, html) => {
+  //             if (err) {
+  //                 console.error('Error reading HTML file:', err);
+  //                 return;
+  //             }
+  //             res.json({html:html})
+  //         });
+  //     })
+  //     .catch(err => {
+  //         console.error('Error converting PPTX to HTML:', err);
+  //     });
+
+});
 app.post("/uploadaudio", upload.single("audio"), (req, res) => {
   // Do something with the uploaded image
   const file = req.file;
@@ -254,11 +325,87 @@ app.post("/uploadvideo", upload.single("video"), (req, res) => {
   console.log(file);
   res.json({ message: "Image uploaded successfully", video: file.path });
 });
+const uploadVideo = async(video)=>{
+  const bucket = admin.storage().bucket();
+  return new Promise((resolve, reject) => {
+
+    const timestamp = new Date().getTime().toString();
+
+    const destination = `Videos/video${timestamp}.mp4`;
+
+    const options = {
+      contentType: 'video/mp4'
+    };
+
+    // Upload file lên Firebase Storage
+    bucket.upload(video, {
+      destination: destination,
+      ...options
+    }, function(err, file) {
+      if (err) {
+        reject(err);
+        return;
+      }
+
+      // Lấy URL của file vừa upload
+      file.getSignedUrl({
+        action: 'read',
+        expires: '03-09-2491' // Thay thế bằng thời gian hết hạn theo mong muốn
+      }, function(err, url) {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        resolve(url);
+      });
+    });
+  });
+}
+app.post("/uploadvideotoFirestore", upload.single("video"), async (req, res) => {
+  // Do something with the uploaded image
+  const file = req.file;
+  let r = ''
+  await uploadVideo(file.path).then((x)=>r = x)
+  res.json({ message: "Image uploaded successfully", video: r});
+});
+const uploadPPT=async(localFilePath)=>{
+  const bucket = admin.storage().bucket();
+  const destinationFileName = 'PPT/'+localFilePath+'.ppt';
+
+  bucket.upload(localFilePath, {
+    destination: destinationFileName,
+    metadata: {
+      contentType: 'application/vnd.ms-powerpoint', // Set the content type of the file
+    },
+  })
+  .then((file) => {
+    console.log('File uploaded successfully.');
+  })
+  .catch((error) => {
+    console.error('Error uploading file:', error);
+    return null
+  });
+  const [url] = await bucket.file(destinationFileName).getSignedUrl({
+    action: 'read',
+    expires: '03-01-3000' // Set an expiration date for the URL if required
+  });
+  console.log(url)
+  return url;
+}
 app.post("/uploadpdf", upload.single("pdf"), (req, res) => {
   // Do something with the uploaded image
   const file = req.file;
   console.log(file);
   res.json({ message: "Image uploaded successfully", filepdf: file.path });
+});
+app.post('/uploaddoc', upload.single('doc'), (req, res) => {
+  res.json({ message: "Image uploaded successfully", filedoc: req.file.path});
+});
+app.post('/uploadppt', upload.single('ppt'), async (req, res) => {
+  let r = ''
+  await uploadPPT(req.file.path).then((x)=> r = x)
+  res.json({ message: "Image uploaded successfully", fileppt: r});
 });
 
 // server.listen(PORT, () => {

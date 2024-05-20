@@ -233,6 +233,49 @@ const registerCourse = async (req, res) => {
     console.error("Error registerCourse: ", error);
   }
 };
+const updateFile = async (req, res) => {
+  const classCollection = collection(firestore, "Class");
+  try {
+    const data = req.body;
+    const docRef2 = doc(classCollection, req.params.classId);
+    await updateDoc(docRef2, { FileSource: arrayUnion(data) });
+    console.log("Document successfully update!");
+    res.send({ message: "update class successfully!" });
+  } catch (error) {
+    console.error("Error registerCourse: ", error);
+  }
+};
+
+const addFolder = async(req,res)=>{
+  const myCollection = collection(firestore, 'Folder');
+  try{
+    const data = req.body; 
+    await addDoc(myCollection, data)
+    .then((docRef) => {
+      const d = doc(myCollection, docRef.id);
+      updateDoc(d, {idFolder:docRef.id});
+      res.json({ message: 'Data post successfully', Id:docRef.id});
+    })
+    .catch((error) => {
+      console.error('Error adding document: ', error);
+    });
+  }
+  catch(error){
+      console.error("Error addpost: ", error);
+  }
+}
+const updateFolder = async (req, res) => {
+  const classCollection = collection(firestore, "Folder");
+  try {
+    const data = req.body;
+    const docRef2 = doc(classCollection, req.params.folderId);
+    await updateDoc(docRef2, { FileSource: arrayUnion(data) });
+    console.log("Document successfully update!");
+    res.send({ message: "update folder successfully!" });
+  } catch (error) {
+    console.error("Error registerCourse: ", error);
+  }
+};
 
 module.exports = {
   addClass,
@@ -241,4 +284,7 @@ module.exports = {
   getClassesByUser,
   registerCourse,
   getTeachersOfClasses,
+  updateFile,
+  addFolder,
+  updateFolder
 };
