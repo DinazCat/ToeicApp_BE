@@ -96,18 +96,33 @@ const getUserChatRooms = async (req, res) => {
   const myCollection = collection(firestore, "ChatRoom");
   try {
     const querySnapshot = await getDocs(myCollection);
-    const list = querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      if (data.users) {
-        const userExistsInRoom = roomUsers.some(
-          (user) => user.userId === req.params.userId
-        );
-        if (userExistsInRoom) {
-          const docId = doc.id;
-          return { ...data, Id: docId };
+    const list = querySnapshot.docs
+      .map((doc) => {
+        const data = doc.data();
+        if (data.users) {
+          const userExistsInRoom = data.users.some(
+            (user) => user.userId === req.params.userId
+          );
+          if (userExistsInRoom) {
+            const docId = doc.id;
+            return { ...data, Id: docId };
+          }
         }
-      }
+      })
+      .filter(Boolean);
+
+    // Sort list by the latest message timestamp
+    list.sort((a, b) => {
+      const getTimeStamp = (item) => {
+        if (item.messages && item.messages.length > 0) {
+          return item.messages[item.messages.length - 1].timestamp;
+        }
+        return 0;
+      };
+
+      return getTimeStamp(b) - getTimeStamp(a);
     });
+
     res.json({ success: true, list: list });
   } catch (error) {
     res.json({
@@ -126,7 +141,7 @@ const getChatRoom = async (req, res) => {
     const documentSnapshot = await getDoc(docRef1);
 
     if (documentSnapshot.exists()) {
-      res.send({ success: true, data: documentSnapshot.data() });
+      res.send({ success: true, chatData: documentSnapshot.data() });
     } else {
       res.status(404).send({ success: false, message: "ChatRoom not found" });
     }
@@ -156,9 +171,7 @@ const updateChatRoom = async (req, res) => {
   }
 };
 
-const updateMessageInChat = async() =>{
-
-}
+const updateMessageInChat = async () => {};
 
 const deleteChatRoom = async (req, res) => {
   try {

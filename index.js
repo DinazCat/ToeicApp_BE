@@ -14,6 +14,7 @@ const {
   doc,
   setDoc,
   getDoc,
+  arrayUnion,
 } = require("firebase/firestore");
 const firestore = getFirestore(firebase);
 const { sendNotification } = require("./controllers/User");
@@ -60,6 +61,7 @@ const { Server } = require("socket.io");
 const io = new Server(server);
 const moment = require("moment");
 let userId = "6uz50o2mYWORgoBVzmYsHZYyq622";
+const chatRooms = new Map();
 
 io.use((socket, next) => {
   if (socket.handshake.query) {
@@ -79,14 +81,15 @@ io.on("connection", (socket) => {
   //   console.log(data)
   //   socket.emit("getMeetingId", data);
   // });
-  db.collection("Class")
-  .onSnapshot((querySnapshot) => {
+  db.collection("Class").onSnapshot((querySnapshot) => {
     querySnapshot.forEach((doc) => {
       const data = doc.data();
-        socket.emit("getMeetingId", {ClassId:data.classId,MeetingId:data.MeetingId});
+      socket.emit("getMeetingId", {
+        ClassId: data.classId,
+        MeetingId: data.MeetingId,
+      });
     });
-
-  })
+  });
 
   //realtime cho alarmVocab
   db.collection("Users")
@@ -202,22 +205,46 @@ io.on("connection", (socket) => {
       });
     });
 
+  socket.on("join room", ({ roomId, userId }) => {
+    socket.join(roomId);
+    // Kiểm tra xem roomId đã tồn tại trong chatRooms chưa
+    if (!chatRooms.has(roomId)) {
+      chatRooms.set(roomId, new Set());
+    }
+    // Thêm kết nối socket vào danh sách người dùng trong phòng
+    chatRooms.get(roomId).add(socket);
+  });
+
   socket.on("chat message", ({ roomId, message }) => {
-    db.collection("ChatRoom")
-      .doc(roomId)
-      .get()
-      .then((doc) => {
-        if (doc.exists) {
-          const room = doc.data();
-          room.users.forEach((user) => {
-            io.to(user.userId).emit("chat message", { message });
-          });
-        } else {
-          console.log("No such document!");
-        }
+    io.emit("new message", { message, roomId });
+
+    const chatRoomDoc = doc(firestore, "ChatRoom", roomId);
+    updateDoc(chatRoomDoc, {
+      messages: arrayUnion(message),
+    })
+      .then(() => {
+        console.log("Updated new message!");
       })
       .catch((error) => {
-        console.log("Error getting document:", error);
+        console.error("Error updating new message:", error);
+      });
+  });
+
+  socket.on("leave room", () => {
+    // TODO: Xử lý khi một người dùng rời phòng chat
+  });
+
+  socket.on("chats update", ({ roomId }) => {
+    db.collection("ChatRoom")
+      .doc(roomId)
+      .onSnapshot((doc) => {
+        if (doc.exists) {
+          const users = doc.data().users;
+          // users.forEach((user) => {
+          //   io.to(user.userId).emit("new chat", roomId);
+          // });
+          io.emit("new chat", users);
+        }
       });
   });
 
