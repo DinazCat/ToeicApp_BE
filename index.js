@@ -468,40 +468,46 @@ app.get('/getSubtitle', async (req, res) => {
   }
 });
 app.use(bodyParser.json());
-app.post('/momo_ipn', (req, res) => {
+app.post('/momo_ipn', async (req, res) => {
   const ipnData = req.body;
   console.log('Received IPN from MoMo:', ipnData);
 
   const { partnerCode, orderId, requestId, amount, orderInfo, orderType, transId, resultCode, message, payType, responseTime, extraData, signature } = ipnData;
 
-  // Tạo rawSignature từ các thông tin nhận được
-  const rawSignature = `partnerCode=${partnerCode}&orderId=${orderId}&requestId=${requestId}&amount=${amount}&orderInfo=${orderInfo}&orderType=${orderType}&transId=${transId}&resultCode=${resultCode}&message=${message}&payType=${payType}&responseTime=${responseTime}&extraData=${extraData}`;
 
-  // Khóa bí mật của bạn (secondaryKey)
-  const secretKey = "K951B6PE1waDMi640xX08PD3vg6EkVlz"; // Thay thế bằng Secondary Key của bạn
-
-  // Tạo chữ ký để so sánh
-  const computedSignature = crypto.createHmac('sha256', secretKey).update(rawSignature).digest('hex');
-
-  // Kiểm tra chữ ký
-  if (computedSignature === signature) {
-      console.log('Signature is valid');
-
-      // Kiểm tra trạng thái giao dịch
-      if (resultCode === 0) {
-          console.log(`Transaction successful for Order ID: ${orderId}, Request ID: ${requestId}, Amount: ${amount}`);
-          // Xử lý logic khi giao dịch thành công
-      } else {
-          console.log(`Transaction failed for Order ID: ${orderId}, Request ID: ${requestId}. Reason: ${message}`);
-          // Xử lý logic khi giao dịch thất bại
-      }
-
-      // Phản hồi lại MoMo với HTTP code 204
-      res.sendStatus(204);
-  } else {
-      console.log('Signature is invalid');
-      res.status(400).send('Invalid signature');
-  }
+  if (resultCode === 0) {
+            console.log(`Transaction successful for Order ID: ${orderId}, Request ID: ${requestId}, Amount: ${amount}`);
+            // Xử lý logic khi giao dịch thành công
+              const myCollection = collection(firestore, 'Transaction');
+              try{
+                const data = {
+                  userId:extraData,
+                  orderId:orderId,
+                  orderInfo:orderInfo,
+                  orderType:orderType,
+                  amount:amount,
+                  responseTime:responseTime
+                }; 
+                await addDoc(myCollection, data)
+                .then((docRef) => {
+                  const d = doc(myCollection, docRef.id);
+                  updateDoc(d, {Id:docRef.id});
+                })
+                .catch((error) => {
+                  console.error('Error adding document: ', error);
+                });
+              }
+              catch(error){
+                  console.error("Error addpost: ", error);
+              }
+              res.sendStatus(204);
+              io.emit('transactionresult', {message:'success',userId:extraData});
+        } else {
+            console.log(`Transaction failed for Order ID: ${orderId}, Request ID: ${requestId}. Reason: ${message}`);
+            // Xử lý logic khi giao dịch thất bại
+            io.emit('transactionresult', {message:'fail',userId:extraData});
+        }
+  
 });
  
 if (process.env.NODE_ENV !== "test") {
