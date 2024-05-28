@@ -1,8 +1,11 @@
 const express = require("express");
-const { firebase, db } = require("./config");
+const { firebase, db, admin } = require("./config");
 const cron = require("node-cron");
 const PORT = 3000;
 const multer = require("multer");
+const fs = require("fs");
+const mammoth = require("mammoth");
+const path = require("path");
 const upload = multer({ dest: "uploads/" });
 
 const {
@@ -19,6 +22,7 @@ const {
 const firestore = getFirestore(firebase);
 const { sendNotification } = require("./controllers/User");
 const { get1PHistory } = require("./controllers/Question");
+const { uploadImage } = require("./controllers/User");
 
 const SendNoti = async () => {
   const myCollection = collection(firestore, "Users");
@@ -87,6 +91,20 @@ io.on("connection", (socket) => {
       socket.emit("getMeetingId", {
         ClassId: data.classId,
         MeetingId: data.MeetingId,
+      });
+      socket.emit("getFiles", {
+        ClassId: data.classId,
+        Files: data.FileSource,
+      });
+    });
+  });
+  //realtime cho folder
+  db.collection("Folder").onSnapshot((querySnapshot) => {
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      socket.emit("getFilesinFolder", {
+        Id: data.idFolder,
+        Files: data?.FileSource || [],
       });
     });
   });
@@ -204,6 +222,13 @@ io.on("connection", (socket) => {
         }
       });
     });
+  //realtime for assignment
+  db.collection("Asignment").onSnapshot((querySnapshot) => {
+    socket.emit("assignment change", {});
+    // querySnapshot.forEach((doc) => {
+    //   const data = doc.data();
+    // });
+  });
 
   socket.on("join room", ({ roomId, userId }) => {
     socket.join(roomId);
@@ -268,6 +293,61 @@ app.post("/upload", upload.single("image"), (req, res) => {
 
   res.json({ message: "Image uploaded successfully", photo: file.path });
 });
+// Route để truy cập file
+app.get("/getfilebase64/:filename", (req, res) => {
+  const filePath = path.join(__dirname, "uploads", req.params.filename);
+  // console.log(filePath)
+  fs.readFile(filePath, (err, data) => {
+    if (err) {
+      res.status(500).send(err);
+    } else {
+      const base64Data = data.toString("base64");
+      res.json({ base64: base64Data });
+    }
+  });
+  // res.sendFile(filePath);
+});
+app.get("/getfilebinary/:filename", (req, res) => {
+  const filePath = path.join(__dirname, "uploads", req.params.filename);
+  // console.log(filePath)
+
+  res.sendFile(filePath);
+});
+app.get("/getfilehtml/:filename", (req, res) => {
+  const filePath = path.join(__dirname, "uploads", req.params.filename);
+  mammoth
+    .convertToHtml({ path: filePath })
+    .then((result) => {
+      const html = result.value; // Nội dung HTML được tạo từ tệp Word
+      res.json({ html: html });
+    })
+    .catch((err) => {
+      console.error("Error converting to HTML: ", err);
+    });
+});
+app.get("/getfileppthtml/:filename", (req, res) => {
+  // const filePath = path.join(__dirname, 'uploads', req.params.filename);
+  // const outputDir = path.join(__dirname, 'output');
+  // if (!fs.existsSync(outputDir)){
+  //     fs.mkdirSync(outputDir);
+  // }
+  // pptx2html(filePath, outputDir)
+  //     .then(() => {
+  //         console.log('Conversion successful!');
+  //         // Đọc và xử lý tệp HTML kết quả
+  //         const htmlFilePath = path.join(outputDir, 'index.html');
+  //         fs.readFile(htmlFilePath, 'utf8', (err, html) => {
+  //             if (err) {
+  //                 console.error('Error reading HTML file:', err);
+  //                 return;
+  //             }
+  //             res.json({html:html})
+  //         });
+  //     })
+  //     .catch(err => {
+  //         console.error('Error converting PPTX to HTML:', err);
+  //     });
+});
 app.post("/uploadaudio", upload.single("audio"), (req, res) => {
   // Do something with the uploaded image
   const file = req.file;
@@ -281,11 +361,149 @@ app.post("/uploadvideo", upload.single("video"), (req, res) => {
   console.log(file);
   res.json({ message: "Image uploaded successfully", video: file.path });
 });
+const uploadVideo = async (video) => {
+  const bucket = admin.storage().bucket();
+  return new Promise((resolve, reject) => {
+    const timestamp = new Date().getTime().toString();
+
+    const destination = `Videos/video${timestamp}.mp4`;
+
+    const options = {
+      contentType: "video/mp4",
+    };
+
+    // Upload file lên Firebase Storage
+    bucket.upload(
+      video,
+      {
+        destination: destination,
+        ...options,
+      },
+      function (err, file) {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        // Lấy URL của file vừa upload
+        file.getSignedUrl(
+          {
+            action: "read",
+            expires: "03-09-2491", // Thay thế bằng thời gian hết hạn theo mong muốn
+          },
+          function (err, url) {
+            if (err) {
+              reject(err);
+              return;
+            }
+
+            resolve(url);
+          }
+        );
+      }
+    );
+  });
+};
+app.post(
+  "/uploadvideotoFirestore",
+  upload.single("video"),
+  async (req, res) => {
+    // Do something with the uploaded image
+    const file = req.file;
+    let r = "";
+    await uploadVideo(file.path).then((x) => (r = x));
+    res.json({ message: "Image uploaded successfully", video: r });
+  }
+);
+const uploadPPT = async (localFilePath) => {
+  const bucket = admin.storage().bucket();
+  const destinationFileName = "PPT/" + localFilePath + ".ppt";
+
+  bucket
+    .upload(localFilePath, {
+      destination: destinationFileName,
+      metadata: {
+        contentType: "application/vnd.ms-powerpoint", // Set the content type of the file
+      },
+    })
+    .then((file) => {
+      console.log("File uploaded successfully.");
+    })
+    .catch((error) => {
+      console.error("Error uploading file:", error);
+      return null;
+    });
+  const [url] = await bucket.file(destinationFileName).getSignedUrl({
+    action: "read",
+    expires: "03-01-3000", // Set an expiration date for the URL if required
+  });
+  console.log(url);
+  return url;
+};
 app.post("/uploadpdf", upload.single("pdf"), (req, res) => {
   // Do something with the uploaded image
   const file = req.file;
   console.log(file);
   res.json({ message: "Image uploaded successfully", filepdf: file.path });
+});
+app.post("/uploaddoc", upload.single("doc"), (req, res) => {
+  res.json({ message: "Image uploaded successfully", filedoc: req.file.path });
+});
+app.post("/uploadppt", upload.single("ppt"), async (req, res) => {
+  let r = "";
+  await uploadPPT(req.file.path).then((x) => (r = x));
+  res.json({ message: "Image uploaded successfully", fileppt: r });
+});
+
+app.post("/uploadImgToStorage", upload.single("image"), async (req, res) => {
+  const file = req.file;
+  console.log(file);
+
+  const imgUrl = await uploadImage(file.path);
+  res.json({
+    message: "Image uploaded to storage successfully",
+    imgUrl: imgUrl,
+  });
+});
+
+app.post("/uploadFile", upload.single("file"), async (req, res) => {
+  try {
+    const file = req.file;
+    console.log(file);
+
+    const bucket = admin.storage().bucket();
+    const timestamp = new Date().getTime().toString();
+    const destinationFileName = `Files/${timestamp}-${file.originalname}`;
+
+    // Tải lên Firebase Storage
+    await bucket.upload(file.path, {
+      destination: destinationFileName,
+      metadata: {
+        contentType: file.mimetype,
+      },
+    });
+
+    // Lấy URL của file đã upload
+    const fileUpload = bucket.file(destinationFileName);
+    const [url] = await fileUpload.getSignedUrl({
+      action: "read",
+      expires: "03-01-2030",
+    });
+
+    const fileData = {
+      name: file.originalname,
+      size: file.size,
+      url: url,
+    };
+
+    res.send({
+      message: "File uploaded to storage successfully",
+      file: fileData,
+    });
+  } catch (error) {
+    console.error("Error processing upload:", error);
+    res.status(500).send({ error: "Internal Server Error" });
+  }
 });
 
 // server.listen(PORT, () => {
