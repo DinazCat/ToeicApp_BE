@@ -479,14 +479,16 @@ app.post('/momo_ipn', async (req, res) => {
             console.log(`Transaction successful for Order ID: ${orderId}, Request ID: ${requestId}, Amount: ${amount}`);
             // Xử lý logic khi giao dịch thành công
               const myCollection = collection(firestore, 'Transaction');
+              let extra = extraData.split(',')
               try{
                 const data = {
-                  userId:extraData,
+                  userId:extra[0],
                   orderId:orderId,
                   orderInfo:orderInfo,
                   orderType:orderType,
                   amount:amount,
-                  responseTime:responseTime
+                  responseTime:responseTime,
+                  classId:extra[1]
                 }; 
                 await addDoc(myCollection, data)
                 .then((docRef) => {

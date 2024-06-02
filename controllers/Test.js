@@ -66,4 +66,41 @@ const uploadTestHistory  = async(req,res)=>{
     console.error('Error adding document TestHistory: ', error);
   });
 }
-module.exports={addTest, getAllTest, updateTest, deleteTest, uploadTestHistory}
+const get2Q = (list)=>{
+  let B = []
+  let firstIndex = Math.floor(Math.random() * list.length);
+  B.push(list[firstIndex]);
+
+  // Đảm bảo câu hỏi thứ hai không trùng với câu hỏi đầu tiên
+  let secondIndex;
+  do {
+      secondIndex = Math.floor(Math.random() * list.length);
+  } while (secondIndex === firstIndex);
+
+  B.push(list[secondIndex]);
+  return B
+}
+const getTestTeacher = async(req,res)=>{
+  let list14Q = []
+  const collectionL = ['ListenPart1','ListenPart2','ListenPart3','ListenPart4','ReadPart1','ReadPart2','ReadPart3']
+  const collectionL1 = ['L1','L2','L3','L4','R1','R2','R3']
+  for(let i = 0; i < 7; i++){
+    const myCollection = collection(firestore, collectionL[i]);
+    try{
+    const querySnapshot = await getDocs(myCollection);
+    const list = querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        const docId = doc.id;
+        return { ...data, Id: docId, part:collectionL1[i]};
+      });
+      let temp = get2Q(list);
+      list14Q.push(...temp)
+    }
+    catch(error){
+        console.log(error);
+    }
+  }
+  res.json({success:true, tests:list14Q});
+  
+}
+module.exports={addTest, getAllTest, updateTest, deleteTest, uploadTestHistory, getTestTeacher}
