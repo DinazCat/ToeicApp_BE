@@ -8,6 +8,8 @@ const mammoth = require("mammoth");
 const path = require("path");
 const upload = multer({ dest: "uploads/" });
 const puppeteer = require("puppeteer");
+const bodyParser = require("body-parser");
+const crypto = require("crypto");
 
 const {
   getFirestore,
@@ -562,6 +564,66 @@ app.get("/getSubtitle", async (req, res) => {
     res.status(500).send("Error downloading subtitle");
   }
 });
+app.use(bodyParser.json());
+app.post("/momo_ipn", async (req, res) => {
+  const ipnData = req.body;
+  console.log("Received IPN from MoMo:", ipnData);
+
+  const {
+    partnerCode,
+    orderId,
+    requestId,
+    amount,
+    orderInfo,
+    orderType,
+    transId,
+    resultCode,
+    message,
+    payType,
+    responseTime,
+    extraData,
+    signature,
+  } = ipnData;
+
+  if (resultCode === 0) {
+    console.log(
+      `Transaction successful for Order ID: ${orderId}, Request ID: ${requestId}, Amount: ${amount}`
+    );
+    // Xử lý logic khi giao dịch thành công
+    const myCollection = collection(firestore, "Transaction");
+    let extra = extraData.split(",");
+    try {
+      const data = {
+        userId: extra[0],
+        orderId: orderId,
+        orderInfo: orderInfo,
+        orderType: orderType,
+        amount: amount,
+        responseTime: responseTime,
+        classId: extra[1],
+      };
+      await addDoc(myCollection, data)
+        .then((docRef) => {
+          const d = doc(myCollection, docRef.id);
+          updateDoc(d, { Id: docRef.id });
+        })
+        .catch((error) => {
+          console.error("Error adding document: ", error);
+        });
+    } catch (error) {
+      console.error("Error addpost: ", error);
+    }
+    res.sendStatus(204);
+    io.emit("transactionresult", { message: "success", userId: extraData });
+  } else {
+    console.log(
+      `Transaction failed for Order ID: ${orderId}, Request ID: ${requestId}. Reason: ${message}`
+    );
+    // Xử lý logic khi giao dịch thất bại
+    io.emit("transactionresult", { message: "fail", userId: extraData });
+  }
+});
+
 if (process.env.NODE_ENV !== "test") {
   server.listen(PORT, () => console.log(`Listening on port ${PORT}`));
 }

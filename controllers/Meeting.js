@@ -105,7 +105,7 @@ const getRecordings = async (req,res)=>{
           //     listContent.push({...Info,type:'Post'})
           //   }
           // }
-          list.push({Date:startDate.format('DD/MM/YYYY'), Content:listContent});
+          list.push({Date:startDate.format('DD/MM/YYYY'), Content:listContent, classId:req.params.classId});
           break;
         }
       }

@@ -69,6 +69,7 @@ const {
   updateTest,
   deleteTest,
   uploadTestHistory,
+  getTestTeacher,
 } = require("../controllers/Test");
 
 const {
@@ -99,6 +100,7 @@ const {
   updateFile,
   addFolder,
   updateFolder,
+  checkTransaction,
 } = require("../controllers/Class");
 const { getRecordings, getRangeDate } = require("../controllers/Meeting");
 const { getAgendaOfUser } = require("../controllers/Agenda");
@@ -166,6 +168,7 @@ router.get("/Tests", getAllTest);
 router.put("/Test/update/:testId", updateTest);
 router.delete("/Test/delete/:testId", deleteTest);
 router.post("/Test/TestHistory/:userId/upload", uploadTestHistory);
+router.get("/getTestTeacher", getTestTeacher);
 //chat
 router.post("/Chat/initiateCall", initiateCall);
 router.post("/Chat/updateCall", updateCall);
@@ -183,6 +186,7 @@ router.post("/Class/register", registerCourse);
 router.get("/Teachers/:userId", getTeachersOfClasses);
 router.put("/updateFile/:classId", updateFile);
 router.put("/updateFolder/:folderId", updateFolder);
+router.get("/Transaction/:userId/:classId", checkTransaction);
 //Meeting
 router.get("/Meeting/getRecordings/:classId", getRecordings);
 router.get("/Meeting/getRangeDate/:classId", getRangeDate);

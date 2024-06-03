@@ -277,6 +277,22 @@ const updateFolder = async (req, res) => {
   }
 };
 
+const checkTransaction = async (req,res) => {
+  const myCollection = collection(firestore, 'Transaction');
+  try {
+       const querySnapshot = await getDocs(myCollection);
+       let pay = false;
+        querySnapshot.docs.map((doc) => {
+        if(doc.data().userId == req.params.userId && doc.data().classId == req.params.classId){
+          pay = true;
+        }
+         });
+        res.json({pay:pay});
+  } catch (e) {
+    console.log(e);
+  }
+}
+
 module.exports = {
   addClass,
   getAllClasses,
@@ -286,5 +302,6 @@ module.exports = {
   getTeachersOfClasses,
   updateFile,
   addFolder,
-  updateFolder
+  updateFolder,
+  checkTransaction,
 };
