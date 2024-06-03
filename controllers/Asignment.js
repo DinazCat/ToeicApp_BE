@@ -76,7 +76,8 @@ const updateAsignment = async (req, res) => {
     const myCollection = collection(firestore, "Asignment");
     const docRef1 = doc(myCollection, req.params.id);
     let data = req.body;
-    await updateDoc(docRef1, { submissions: data });
+    console.log(data);
+    await updateDoc(docRef1, data);
     console.log("Document successfully updated!");
     res.send({ message: "Document successfully updated!" });
   } catch (error) {

@@ -7,8 +7,7 @@ const fs = require("fs");
 const mammoth = require("mammoth");
 const path = require("path");
 const upload = multer({ dest: "uploads/" });
-const puppeteer = require('puppeteer');
-
+const puppeteer = require("puppeteer");
 
 const {
   getFirestore,
@@ -514,23 +513,23 @@ app.post("/uploadFile", upload.single("file"), async (req, res) => {
 async function getSubtitles(videoUrl) {
   const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
-  await page.goto(videoUrl, { waitUntil: 'networkidle2' });
+  await page.goto(videoUrl, { waitUntil: "networkidle2" });
 
   // Lấy nội dung trang
   const pageContent = await page.content();
 
   // Tìm URL phụ đề trong nội dung trang
   const subtitleUrl = extractSubtitleUrl(pageContent);
-  console.log(subtitleUrl)
+  console.log(subtitleUrl);
   if (!subtitleUrl) {
     await browser.close();
-    throw new Error('No subtitles found for this video.');
+    throw new Error("No subtitles found for this video.");
   }
 
   // Tải phụ đề từ URL phụ đề
   const subtitlesResponse = await page.goto(subtitleUrl);
   let subtitlesText = await subtitlesResponse.text();
-  subtitlesText = subtitlesText.replace(/&amp;#39;/g, "'")
+  subtitlesText = subtitlesText.replace(/&amp;#39;/g, "'");
 
   await browser.close();
   return subtitlesText;
@@ -540,27 +539,27 @@ function extractSubtitleUrl(pageContent) {
   const regex = /\"(https:\/\/www\.youtube\.com\/api\/timedtext\?[^"]+)\"/;
   const match = pageContent.match(regex);
   if (match) {
-    let m = match[1].replace(/\\u0026/g, '&'); // Thay thế tất cả các lần xuất hiện của '\u0026' bằng '&'
-    m = m.replace(/lang=ar/g, 'lang=en'); // Thay thế tất cả các lần xuất hiện của 'lang=ar' bằng 'lang=en'
+    let m = match[1].replace(/\\u0026/g, "&"); // Thay thế tất cả các lần xuất hiện của '\u0026' bằng '&'
+    m = m.replace(/lang=ar/g, "lang=en"); // Thay thế tất cả các lần xuất hiện của 'lang=ar' bằng 'lang=en'
     return decodeURI(m);
   } else {
     return null;
   }
 }
 
-app.get('/getSubtitle', async (req, res) => {
+app.get("/getSubtitle", async (req, res) => {
   const videoUrl = req.query.url;
   if (!videoUrl) {
-    return res.status(400).send('URL is required');
+    return res.status(400).send("URL is required");
   }
 
   try {
     const subtitles = await getSubtitles(videoUrl);
-    res.setHeader('Content-Type', 'text/plain');
+    res.setHeader("Content-Type", "text/plain");
     res.send(subtitles);
   } catch (error) {
-    console.error('Error downloading subtitle:', error);
-    res.status(500).send('Error downloading subtitle');
+    console.error("Error downloading subtitle:", error);
+    res.status(500).send("Error downloading subtitle");
   }
 });
 if (process.env.NODE_ENV !== "test") {
