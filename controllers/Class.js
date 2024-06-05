@@ -9,8 +9,9 @@ const {
   arrayUnion,
   query,
   where,
+  arrayRemove,
 } = require("firebase/firestore");
-const { firebase } = require("../config");
+const { firebase, admin, db } = require("../config");
 const firestore = getFirestore(firebase);
 
 const addClass = async (req, res) => {
@@ -245,7 +246,27 @@ const updateFile = async (req, res) => {
     console.error("Error registerCourse: ", error);
   }
 };
+const deleteFile = async (req, res) => {
+  const classCollection =  collection(firestore,'Class');
 
+  try {
+    const docRef = doc(classCollection,req.params.classId);
+    await updateDoc(docRef,{FileSource: arrayRemove(req.body)})
+    res.send({ message: "update class successfully!" });
+  } catch (error) {
+    console.error('Error removing item from array: ', error);
+  }
+}
+const deleteFolder = async (req, res) => {
+  try {
+    const documentRef = db.collection('Folder').doc(req.params.Id);
+    await documentRef.delete();
+    res.send({ message: "delete successfully!" });
+    console.log('Document deleted successfully.');
+  } catch (error) {
+    console.log('Error deleting document:', error);
+  }
+}
 const addFolder = async(req,res)=>{
   const myCollection = collection(firestore, 'Folder');
   try{
@@ -304,4 +325,6 @@ module.exports = {
   addFolder,
   updateFolder,
   checkTransaction,
+  deleteFile,
+  deleteFolder,
 };
