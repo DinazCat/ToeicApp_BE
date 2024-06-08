@@ -614,13 +614,13 @@ app.post("/momo_ipn", async (req, res) => {
       console.error("Error addpost: ", error);
     }
     res.sendStatus(204);
-    io.emit("transactionresult", { message: "success", userId: extraData });
+    io.emit("transactionresult", { message: "success", userId: extraData[0] });
   } else {
     console.log(
       `Transaction failed for Order ID: ${orderId}, Request ID: ${requestId}. Reason: ${message}`
     );
     // Xử lý logic khi giao dịch thất bại
-    io.emit("transactionresult", { message: "fail", userId: extraData });
+    io.emit("transactionresult", { message: "fail", userId: extraData[0] });
   }
 });
 
