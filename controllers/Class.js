@@ -313,7 +313,54 @@ const checkTransaction = async (req,res) => {
     console.log(e);
   }
 }
+const getClassData = async (req, res) => {
+  try {
+    const myCollection = collection(firestore, "Class");
+    const docRef1 = doc(myCollection, req.params.classId);
+    const documentSnapshot = await getDoc(docRef1);
 
+    if (documentSnapshot.exists()) {
+      res.send({ success: true, classData: documentSnapshot.data() });
+    } else {
+      res.status(404).send({ success: false, message: "User not found" });
+    }
+  } catch (error) {
+    console.error("Error get user document: ", error);
+    res.status(500).json({
+      success: false,
+      message: "something went wrong when get data from users",
+    });
+  }
+};
+const getAllTransaction = async (req,res)=>{
+  const myCollection = collection(firestore, 'Transaction');
+  try{
+  const querySnapshot = await getDocs(myCollection);
+  const list = querySnapshot.docs.map((doc) => {
+      const data = doc.data();
+      return { ...data};
+    });
+  res.json({success:true, transactions:list});
+  }
+  catch(e){
+      res.json({
+          success:false,
+          message:'something went wrong when get data from vocablesson'
+      })
+      console.log(e)
+  }
+}
+const updateClass = async(req,res)=>{
+  const myCollection = collection(firestore, 'Class');
+  const docRef = doc(myCollection, req.params.classId);
+  try {
+      await updateDoc(docRef, req.body);
+      console.log('Document successfully updated!');
+      res.send({ message: 'Document successfully updated!' });
+    } catch (error) {
+      console.error('Error updating document: ', error);
+    }
+}
 module.exports = {
   addClass,
   getAllClasses,
@@ -327,4 +374,7 @@ module.exports = {
   checkTransaction,
   deleteFile,
   deleteFolder,
+  getClassData,
+  getAllTransaction,
+  updateClass
 };

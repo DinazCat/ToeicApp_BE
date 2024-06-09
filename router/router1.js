@@ -102,7 +102,10 @@ const {
   updateFolder,
   checkTransaction,
   deleteFile,
-  deleteFolder
+  deleteFolder,
+  getClassData,
+  getAllTransaction,
+  updateClass
 } = require("../controllers/Class");
 const { getRecordings, getRangeDate } = require("../controllers/Meeting");
 const { getAgendaOfUser } = require("../controllers/Agenda");
@@ -183,6 +186,7 @@ router.delete("/ChatRoom/delete/:id", deleteChatRoom);
 router.post("/Class/add", addClass);
 router.post("/CreateFolder/add", addFolder);
 router.get("/Classes", getAllClasses);
+router.get("/Transactions", getAllTransaction);
 router.get("/Classes/:userId", getClassesByUser);
 router.post("/Class/register", registerCourse);
 router.get("/Teachers/:userId", getTeachersOfClasses);
@@ -191,6 +195,8 @@ router.put("/deleteFile/:classId", deleteFile);
 router.put("/updateFolder/:folderId", updateFolder);
 router.delete("/deleteFolder/:Id", deleteFolder);
 router.get("/Transaction/:userId/:classId", checkTransaction);
+router.get("/ClassData/:classId", getClassData);
+router.put("/updateClass/classId", updateClass);
 //Meeting
 router.get("/Meeting/getRecordings/:classId", getRecordings);
 router.get("/Meeting/getRangeDate/:classId", getRangeDate);
