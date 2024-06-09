@@ -67,6 +67,7 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 const moment = require("moment");
+const { ExtensionTransport } = require("puppeteer");
 let userId = "6uz50o2mYWORgoBVzmYsHZYyq622";
 const chatRooms = new Map();
 
@@ -584,14 +585,13 @@ app.post("/momo_ipn", async (req, res) => {
     extraData,
     signature,
   } = ipnData;
-
+  let extra = extraData.split(",");
   if (resultCode === 0) {
     console.log(
       `Transaction successful for Order ID: ${orderId}, Request ID: ${requestId}, Amount: ${amount}`
     );
     // Xử lý logic khi giao dịch thành công
     const myCollection = collection(firestore, "Transaction");
-    let extra = extraData.split(",");
     try {
       const data = {
         userId: extra[0],
@@ -614,13 +614,13 @@ app.post("/momo_ipn", async (req, res) => {
       console.error("Error addpost: ", error);
     }
     res.sendStatus(204);
-    io.emit("transactionresult", { message: "success", userId: extraData[0] });
+    io.emit("transactionresult", { message: "success", userId: extra[0] });
   } else {
     console.log(
       `Transaction failed for Order ID: ${orderId}, Request ID: ${requestId}. Reason: ${message}`
     );
     // Xử lý logic khi giao dịch thất bại
-    io.emit("transactionresult", { message: "fail", userId: extraData[0] });
+    io.emit("transactionresult", { message: "fail", userId: extra[0] });
   }
 });
 
