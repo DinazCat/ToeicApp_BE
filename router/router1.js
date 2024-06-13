@@ -196,7 +196,7 @@ router.put("/updateFolder/:folderId", updateFolder);
 router.delete("/deleteFolder/:Id", deleteFolder);
 router.get("/Transaction/:userId/:classId", checkTransaction);
 router.get("/ClassData/:classId", getClassData);
-router.put("/updateClass/classId", updateClass);
+router.put("/updateClass/:classId", updateClass);
 //Meeting
 router.get("/Meeting/getRecordings/:classId", getRecordings);
 router.get("/Meeting/getRangeDate/:classId", getRangeDate);
