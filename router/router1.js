@@ -24,6 +24,7 @@ const {
   addReview,
   updateReview,
   setTeacherInfo,
+  deleteUser,
 } = require("../controllers/User");
 const {
   uploadAudio,
@@ -105,7 +106,8 @@ const {
   deleteFolder,
   getClassData,
   getAllTransaction,
-  updateClass
+  updateClass,
+  deleteClass,
 } = require("../controllers/Class");
 const { getRecordings, getRangeDate } = require("../controllers/Meeting");
 const { getAgendaOfUser } = require("../controllers/Agenda");
@@ -127,6 +129,7 @@ router.get("/UserData/:userId", getUserData);
 router.get("/Teachers", getAllTeachers);
 router.put("/addReview/:userId", addReview);
 router.put("/updateReview/:userId", updateReview);
+router.delete("/deleteUser/:userId", deleteUser);
 //question
 router.get("/Question/:Part/:userId/:number", getQuestion);
 router.post("/PracticeHistory/:userId/:sign", pushPracticeHistory);
@@ -197,6 +200,7 @@ router.delete("/deleteFolder/:Id", deleteFolder);
 router.get("/Transaction/:userId/:classId", checkTransaction);
 router.get("/ClassData/:classId", getClassData);
 router.put("/updateClass/:classId", updateClass);
+router.delete("/deleteClass/:classId", deleteClass);
 //Meeting
 router.get("/Meeting/getRecordings/:classId", getRecordings);
 router.get("/Meeting/getRangeDate/:classId", getRangeDate);

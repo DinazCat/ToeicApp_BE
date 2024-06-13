@@ -192,7 +192,6 @@ const getTeachersOfClasses = async (req, res) => {
             let rating = 0;
 
             for (let i = 0; i < item?.reviews?.length; i++)
-
               rating += item?.reviews[i]?.rating;
 
             if (rating > 0)
@@ -247,44 +246,43 @@ const updateFile = async (req, res) => {
   }
 };
 const deleteFile = async (req, res) => {
-  const classCollection =  collection(firestore,'Class');
+  const classCollection = collection(firestore, "Class");
 
   try {
-    const docRef = doc(classCollection,req.params.classId);
-    await updateDoc(docRef,{FileSource: arrayRemove(req.body)})
+    const docRef = doc(classCollection, req.params.classId);
+    await updateDoc(docRef, { FileSource: arrayRemove(req.body) });
     res.send({ message: "update class successfully!" });
   } catch (error) {
-    console.error('Error removing item from array: ', error);
+    console.error("Error removing item from array: ", error);
   }
-}
+};
 const deleteFolder = async (req, res) => {
   try {
-    const documentRef = db.collection('Folder').doc(req.params.Id);
+    const documentRef = db.collection("Folder").doc(req.params.Id);
     await documentRef.delete();
     res.send({ message: "delete successfully!" });
-    console.log('Document deleted successfully.');
+    console.log("Document deleted successfully.");
   } catch (error) {
-    console.log('Error deleting document:', error);
+    console.log("Error deleting document:", error);
   }
-}
-const addFolder = async(req,res)=>{
-  const myCollection = collection(firestore, 'Folder');
-  try{
-    const data = req.body; 
+};
+const addFolder = async (req, res) => {
+  const myCollection = collection(firestore, "Folder");
+  try {
+    const data = req.body;
     await addDoc(myCollection, data)
-    .then((docRef) => {
-      const d = doc(myCollection, docRef.id);
-      updateDoc(d, {idFolder:docRef.id});
-      res.json({ message: 'Data post successfully', Id:docRef.id});
-    })
-    .catch((error) => {
-      console.error('Error adding document: ', error);
-    });
+      .then((docRef) => {
+        const d = doc(myCollection, docRef.id);
+        updateDoc(d, { idFolder: docRef.id });
+        res.json({ message: "Data post successfully", Id: docRef.id });
+      })
+      .catch((error) => {
+        console.error("Error adding document: ", error);
+      });
+  } catch (error) {
+    console.error("Error addpost: ", error);
   }
-  catch(error){
-      console.error("Error addpost: ", error);
-  }
-}
+};
 const updateFolder = async (req, res) => {
   const classCollection = collection(firestore, "Folder");
   try {
@@ -298,21 +296,24 @@ const updateFolder = async (req, res) => {
   }
 };
 
-const checkTransaction = async (req,res) => {
-  const myCollection = collection(firestore, 'Transaction');
+const checkTransaction = async (req, res) => {
+  const myCollection = collection(firestore, "Transaction");
   try {
-       const querySnapshot = await getDocs(myCollection);
-       let pay = false;
-        querySnapshot.docs.map((doc) => {
-        if(doc.data().userId == req.params.userId && doc.data().classId == req.params.classId){
-          pay = true;
-        }
-         });
-        res.json({pay:pay});
+    const querySnapshot = await getDocs(myCollection);
+    let pay = false;
+    querySnapshot.docs.map((doc) => {
+      if (
+        doc.data().userId == req.params.userId &&
+        doc.data().classId == req.params.classId
+      ) {
+        pay = true;
+      }
+    });
+    res.json({ pay: pay });
   } catch (e) {
     console.log(e);
   }
-}
+};
 const getClassData = async (req, res) => {
   try {
     const myCollection = collection(firestore, "Class");
@@ -332,35 +333,43 @@ const getClassData = async (req, res) => {
     });
   }
 };
-const getAllTransaction = async (req,res)=>{
-  const myCollection = collection(firestore, 'Transaction');
-  try{
-  const querySnapshot = await getDocs(myCollection);
-  const list = querySnapshot.docs.map((doc) => {
+const getAllTransaction = async (req, res) => {
+  const myCollection = collection(firestore, "Transaction");
+  try {
+    const querySnapshot = await getDocs(myCollection);
+    const list = querySnapshot.docs.map((doc) => {
       const data = doc.data();
-      return { ...data};
+      return { ...data };
     });
-  res.json({success:true, transactions:list});
+    res.json({ success: true, transactions: list });
+  } catch (e) {
+    res.json({
+      success: false,
+      message: "something went wrong when get data from vocablesson",
+    });
+    console.log(e);
   }
-  catch(e){
-      res.json({
-          success:false,
-          message:'something went wrong when get data from vocablesson'
-      })
-      console.log(e)
-  }
-}
-const updateClass = async(req,res)=>{
-  const myCollection = collection(firestore, 'Class');
+};
+const updateClass = async (req, res) => {
+  const myCollection = collection(firestore, "Class");
   const docRef = doc(myCollection, req.params.classId);
   try {
-      await updateDoc(docRef, req.body);
-      console.log('Document successfully updated!');
-      res.send({ message: 'Document successfully updated!' });
-    } catch (error) {
-      console.error('Error updating document: ', error);
-    }
-}
+    await updateDoc(docRef, req.body);
+    console.log("Document successfully updated!");
+    res.send({ message: "Document successfully updated!" });
+  } catch (error) {
+    console.error("Error updating document: ", error);
+  }
+};
+const deleteClass = async (req, res) => {
+  try {
+    const documentRef = db.collection("Class").doc(req.params.classId);
+    await documentRef.delete();
+    console.log("Document deleted successfully.");
+  } catch (error) {
+    console.log("Error deleting document:", error);
+  }
+};
 module.exports = {
   addClass,
   getAllClasses,
@@ -376,5 +385,6 @@ module.exports = {
   deleteFolder,
   getClassData,
   getAllTransaction,
-  updateClass
+  updateClass,
+  deleteClass,
 };

@@ -18,7 +18,7 @@ const {
   uploadBytesResumable,
   getDownloadURL,
 } = require("firebase/storage");
-const { firebase, admin } = require("../config");
+const { firebase, admin, db } = require("../config");
 const firestore = getFirestore(firebase);
 const storage = getStorage();
 
@@ -123,7 +123,7 @@ const setTeacherInfo = async (req, res) => {
     await uploadImage(req.body.toeicCertificateImage).then((x) => {
       data.toeicCertificateImage = x;
     });
-    for(let i = 0; i < req.body.otherCertificateImages.length; i++){
+    for (let i = 0; i < req.body.otherCertificateImages.length; i++) {
       await uploadImage(req.body.otherCertificateImages[i]).then((x) => {
         data.otherCertificateImages[i] = x;
       });
@@ -285,6 +285,16 @@ const updateReview = async (req, res) => {
     });
   }
 };
+
+const deleteUser = async (req, res) => {
+  try {
+    const documentRef = db.collection("Users").doc(req.params.userId);
+    await documentRef.delete();
+    console.log("Document deleted successfully.");
+  } catch (error) {
+    console.log("Error deleting document:", error);
+  }
+};
 module.exports = {
   sendNotification,
   setUserInfo,
@@ -297,5 +307,6 @@ module.exports = {
   getAllTeachers,
   addReview,
   updateReview,
-  setTeacherInfo
+  setTeacherInfo,
+  deleteUser,
 };
